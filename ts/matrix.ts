@@ -87,8 +87,8 @@ export class Vec3 extends Vec2 {
         return new Vec4(this.x, this.y, this.z, 1);
     }
 
-    print(){
-        msg(`[ ${this.x.toFixed(1)}, ${this.y.toFixed(1)}, ${this.z.toFixed(1)}  ]`);
+    str(){
+        return `[ ${this.x.toFixed(1)}, ${this.y.toFixed(1)}, ${this.z.toFixed(1)}  ]`;
     }
 
     copy(){
@@ -145,6 +145,18 @@ export class Vec3 extends Vec2 {
 
         return new Vec3(x, y, z);
     }
+
+    rotX(th : number) : Vec3 {
+        return Mat3.rotX(th).dot(this);
+    }
+
+    rotY(th : number) : Vec3 {
+        return Mat3.rotY(th).dot(this);
+    }
+
+    rotZ(th : number) : Vec3 {
+        return Mat3.rotZ(th).dot(this);
+    }
 }
 
 export class Vec4 extends Vec3 {
@@ -179,8 +191,6 @@ export class Mat {
     dt: (number[])[];
 
     constructor(dt: (number[])[] | undefined = undefined){
-        let dim = this.dim();
-
         this.dt = this.zeroDt();
 
         if(dt == undefined){
@@ -301,10 +311,57 @@ export class Mat2 extends Mat {
 }
 
 export class Mat3 extends Mat {
+    static rotX(th : number) : Mat3 {
+        const m = new Mat3();
+        m.dt[0][0] = 1;
+
+        m.dt[1][1] =   Math.cos(th);
+        m.dt[1][2] = - Math.sin(th);
+    
+        m.dt[2][1] = Math.sin(th);
+        m.dt[2][2] = Math.cos(th);
+    
+        return m;
+    }
+
+    static rotY(th : number) : Mat3 {
+        const m = new Mat3();
+        m.dt[0][0] = Math.cos(th);
+        m.dt[0][2] = Math.sin(th);
+
+        m.dt[1][1] = 1;
+
+        m.dt[2][0] = - Math.sin(th);
+        m.dt[2][2] =   Math.cos(th);
+    
+    
+        return m;
+    }
+
+    static rotZ(th : number) : Mat3 {
+        const m = new Mat3();
+        m.dt[0][0] =   Math.cos(th);
+        m.dt[0][1] = - Math.sin(th);
+    
+        m.dt[1][0] = Math.sin(th);
+        m.dt[1][1] = Math.cos(th);
+    
+        m.dt[2][2] = 1;
+        return m;
+    }
 
     dim(){
         return [3,3];
     }
+
+    dot(v:Vec3) : Vec3 {
+        return new Vec3(
+            dot3(this.dt[0], v), 
+            dot3(this.dt[1], v), 
+            dot3(this.dt[2], v), 
+        );
+    }
+    
 
     det(){
         return (
@@ -383,6 +440,17 @@ export class Mat4 extends Mat {
         return [4,4];
     }
 
+    t() : Mat4 {
+        const m = new Mat4();
+        for(const i of range(4)){
+            for(const j of range(4)){
+                m.dt[i][j] = this.dt[j][i];
+            }
+        }
+
+        return m;
+    }
+
     dot(v:Vec4){
         return new Vec4(
             dot4(this.dt[0], v), 
@@ -392,14 +460,10 @@ export class Mat4 extends Mat {
         );
     }
 
-    print(){
-        for(const row of this.dt){
-            msg(`[ ${row.map(x => x.toFixed(1)).join(", ") } ]`);
-        }
-        msg("");
+    str(){
+        return this.dt.map(row => `[ ${row.map(x => x.toFixed(1)).join(", ") } ]`).join("\n");
     }
 }
-
 
 export function frustum(left : number, right : number, bottom : number, top : number, near : number, far : number) {
     let rl = 1 / (right - left);

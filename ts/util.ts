@@ -11,6 +11,10 @@ export function $(id : string) : HTMLElement {
 
     return ele;
 }
+
+export function $inp(id : string) : HTMLInputElement {
+    return $(id) as HTMLInputElement;
+}
         
 export class MyError extends Error {
     constructor(text : string = ""){

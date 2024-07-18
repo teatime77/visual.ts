@@ -9,12 +9,20 @@
     <title>Visual.ts</title>
 
 
+    <script type="text/javascript" src="../js/gl-matrix-min.js"></script>
     <script type="text/javascript" src="../js/util.js?ver=0"></script>
     <script type="text/javascript" src="../js/matrix.js?ver=0"></script>
     <script type="text/javascript" src="../js/main.js?ver=0"></script>
 </head>
 <body onload="visualts.bodyOnLoad()">
- <canvas id="canvas" width="640" height="480"></canvas>
+ <canvas id="canvas" width="640" height="640" style="width: 640px; height: 640px; border-style: ridge;"></canvas>
+<p></p>
+theta <input type="number" min="0" max="180" step="1" value="90" id="theta" /><br/>
+phi <input type="number" min="-180" max="180" step="1" value="0" id="phi" /><br/>
+
+eye-x <input type="number" min="-20" max="20" step="1" value="0"  id="eye-x" /><br/>
+eye-y <input type="number" min="-20" max="20" step="1" value="0"  id="eye-y" /><br/>
+eye-z <input type="number" min="5"   max="40" step="1" value="30" id="eye-z" /><br/>
 
 </body>
 </html>
