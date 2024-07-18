@@ -4,10 +4,13 @@ namespace visualts {
 
 let view : View;
 
-class View {
+export class View {
     canvas : HTMLCanvasElement;
     ctx    : CanvasRenderingContext2D;
     eye    : Vec3;
+
+    min = new Vec2(NaN, NaN);
+    max = new Vec2(NaN, NaN);
 
     camDistance : number = 5;
     camTheta : number = 0;
@@ -95,6 +98,9 @@ class View {
         this.camTheta = this.camThetaSave + (newY - this.lastMouseY) / 300;
         this.camPhi   = this.camPhiSave - (newX - this.lastMouseX) / 300;
 
+        $inp("theta").value = Math.round(this.camTheta * 180 / Math.PI).toFixed();
+        $inp("phi").value = Math.round(this.camPhi * 180 / Math.PI).toFixed();
+
         this.updateEye();
     }
 
@@ -145,6 +151,15 @@ class View {
         const lookAtPosition = [0, 0, 0];
         const upDirection    = [0, 1, 0];
         glMatrix.mat4.lookAt(this.viewMatrix, cameraPosition, lookAtPosition, upDirection);
+    }
+
+    project(pos : Vec3) : Vec3 {
+        const w = pos.rotX(this.camTheta).rotY(this.camPhi).sub(this.eye);
+
+        w.x /= - 0.4 * w.z;
+        w.y /= - 0.4 * w.z;
+
+        return w;
     }
 
 }
@@ -214,9 +229,10 @@ function makeBall(){
             let w : Vec3;
 
             if(true){
-                w = pos.rotX(view.camTheta).rotY(view.camPhi).sub(view.eye);
-                w.x /= - 0.4 * w.z;
-                w.y /= - 0.4 * w.z;
+                w = view.project(pos);
+                // w = pos.rotX(view.camTheta).rotY(view.camPhi).sub(view.eye);
+                // w.x /= - 0.4 * w.z;
+                // w.y /= - 0.4 * w.z;
             }
             else{
                 const pos2 = pos.sub(view.eye);
