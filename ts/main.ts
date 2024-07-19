@@ -7,13 +7,16 @@ let view : View;
 export class View {
     canvas : HTMLCanvasElement;
     ctx    : CanvasRenderingContext2D;
+
+    shapes : Shape[] = [];
+
     eye    : Vec3;
 
     min = new Vec2(NaN, NaN);
     max = new Vec2(NaN, NaN);
 
-    camDistance : number = 5;
-    camTheta : number = 0;
+    camDistance : number = 30;
+    camTheta : number = 90;
     camPhi   : number = 0;
 
     camThetaSave : number = 0;
@@ -46,6 +49,17 @@ export class View {
 
         this.frustum = this.makeFrustum();
         msg(`frustum\n${this.frustum.str()}`);
+    }
+
+    drawShapes(){
+        this.clear();
+
+        this.shapes.forEach(c => c.setProjection());    
+        this.shapes.sort((a:Shape, b:Shape)=> a.center.z - b.center.z);
+
+        this.shapes.forEach(c => c.draw());    
+
+        window.requestAnimationFrame(this.drawShapes.bind(this));
     }
 
     makeFrustum(){
@@ -114,20 +128,11 @@ export class View {
         ev.preventDefault();
     
         this.camDistance += 0.002 * ev.deltaY;
+        $inp("eye-z").value = Math.round(this.camDistance).toFixed();
+
+
         this.updateEye();
     }
-    
-
-    drawCircle(centerX : number, centerY : number, radius : number, color : string = "red"){
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
-        this.ctx.fillStyle = color;
-        this.ctx.fill();
-        this.ctx.lineWidth = 1;
-        this.ctx.strokeStyle = color;
-        this.ctx.stroke();       
-    }
-
 
     getTransformationMatrix() {
 
@@ -154,23 +159,56 @@ export class View {
     }
 
     project(pos : Vec3) : Vec3 {
-        const w = pos.rotX(this.camTheta).rotY(this.camPhi).sub(this.eye);
+        const w = pos.rotX(this.camTheta).rotY(this.camPhi);//.sub(this.eye);
+        w.z -= this.camDistance;
 
         w.x /= - 0.4 * w.z;
         w.y /= - 0.4 * w.z;
 
+        w.x = 320 + w.x * 320;
+        w.y = 320 + w.y * 320;
+
         return w;
+    }
+
+    addPoint(x: number, y: number, z:number, color : string = "black"){
+        const circle = new Circle(this, new Vec3(x, y, z), 1, color);
+        this.shapes.push(circle);
+    }
+
+    addCircle(x: number, y: number, z:number, radius : number, color : string){
+        const circle = new Circle(this, new Vec3(x, y, z), radius, color);
+        this.shapes.push(circle);
     }
 
 }
 
-class Circle {
+class Circle extends Shape {
     pos : Vec3;
+    radius : number;
     color : string;
 
-    constructor(pos : Vec3, color : string){
+    constructor(view : View, pos : Vec3, radius : number, color : string){
+        super(view);
         this.pos = pos;
+        this.radius = radius;
         this.color = color;
+    }
+
+    setProjection() : void{        
+        this.center = this.view.project(this.pos);
+    }
+
+    draw() : void {
+        const ctx = this.view.ctx;
+        
+        ctx.beginPath();
+        ctx.arc(this.center.x, this.center.y, this.radius, 0, 2 * Math.PI, false);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = this.color;
+        ctx.stroke();       
     }
 }
 
@@ -185,21 +223,8 @@ function colorStr(r : number, pos : Vec3){
 }
 
 function makeBall(){
-    view.clear();
-
-    view.camTheta = parseInt( $inp("theta").value ) * Math.PI / 180;
-    view.camPhi   = parseInt( $inp("phi").value ) * Math.PI / 180;
-    view.getTransformationMatrix();
-
-    // view.updateEye();
-    view.eye.x = parseInt( $inp("eye-x").value );
-    view.eye.y = parseInt( $inp("eye-y").value );
-    view.eye.z = parseInt( $inp("eye-z").value );
-
 
     const r1 = 5;
-
-    const circles : Circle[] = [];
 
     const n1 = 16;
     const n2 = 32;
@@ -214,62 +239,12 @@ function makeBall(){
             const x = r2 * Math.cos(ph);
             const y = r2 * Math.sin(ph);
 
-            if(false){
-                const v3 = new Float32Array([x, y, z]);
-                const out = new Float32Array(3);
-                glMatrix.vec3.transformMat4(out, v3, view.ProjViewMatrix);
-    
-                view.drawCircle(320 + out[0], 320 + out[1], 5);
-                continue;    
-            }
-
             const pos = new Vec3(x, y, z);
             const color = colorStr(r1, pos);
 
-            let w : Vec3;
-
-            if(true){
-                w = view.project(pos);
-                // w = pos.rotX(view.camTheta).rotY(view.camPhi).sub(view.eye);
-                // w.x /= - 0.4 * w.z;
-                // w.y /= - 0.4 * w.z;
-            }
-            else{
-                const pos2 = pos.sub(view.eye);
-                assert(pos2.z < 0);
-    
-                if(true){
-
-                    w = pos2;
-                    w.x /= - 0.4 * w.z;
-                    w.y /= - 0.4 * w.z;
-                }
-                else{
-
-
-                    const v = pos2.to4();
-
-                    w = view.frustum.dot(v).to3();
-                    if(w.x < -1 || 1 < w.x || w.y < -1 || 1 < w.y || w.z < -1 || 1 < w.z){
-                        continue;
-                    }
-                }
-            }
-
-
-            const cx = 320 + w.x * 320;
-            const cy = 320 + w.y * 320;
-            const circle = new Circle(new Vec3(cx, cy, w.z), color);
-            circles.push(circle);
-            // view.drawCircle(cx, cy, 5, color);
+            view.addCircle(pos.x, pos.y, pos.z, 5, color);
         }
     }
-
-    circles.sort((a:Circle, b:Circle)=> a.pos.z - b.pos.z);
-
-    circles.forEach(c => view.drawCircle(c.pos.x, c.pos.y, 5, c.color));
-
-    window.requestAnimationFrame(makeBall);
 }
 
 export function bodyOnLoad(){
@@ -277,6 +252,7 @@ export function bodyOnLoad(){
     view = new View(canvas);
     msg("hello");
 
-    window.requestAnimationFrame(makeBall);
+    makeBall();
+    window.requestAnimationFrame(view.drawShapes.bind(view));
 }
 }
