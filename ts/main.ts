@@ -223,7 +223,6 @@ function colorStr(r : number, pos : Vec3){
 }
 
 function makeBall(){
-
     const r1 = 5;
 
     const n1 = 16;
@@ -247,12 +246,40 @@ function makeBall(){
     }
 }
 
+function makeArrows(){
+    const r1 = 5;
+
+    const n1 = 8;
+    const n2 = 16;
+
+    for(const i of range(n1)){
+        const th = Math.PI * i / n1;
+        const z  = r1 * Math.cos(th);
+        const r2 = r1 * Math.sin(th);
+
+        for(const j  of range(n2)){
+            const ph = 2 * Math.PI * j / n2;
+            const x = r2 * Math.cos(ph);
+            const y = r2 * Math.sin(ph);
+
+            const pos = new Vec3(x, y, z);
+            const vec = new Vec3(x, y, z);
+            const color = colorStr(r1, pos);
+
+            const arrow = new Arrow(view, pos, vec, color);
+            view.shapes.push(arrow);
+        }
+    }
+
+}
+
 export function bodyOnLoad(){
     const canvas = $("canvas") as HTMLCanvasElement;
     view = new View(canvas);
     msg("hello");
 
     makeBall();
+    makeArrows();
     window.requestAnimationFrame(view.drawShapes.bind(view));
 }
 }

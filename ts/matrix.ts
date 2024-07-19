@@ -72,11 +72,33 @@ export class Vec2 {
 
         return new Vec2(x, y);
     }
+
+    rot(th : number) : Vec2 {
+        const cs = Math.cos(th);
+        const sn = Math.sin(th);
+
+        return new Vec2(this.x * cs - this.y * sn, this.x * sn + this.y * cs);
+    }
+
+    rot90() : Vec2 {
+        return new Vec2(- this.y, this.x);
+    }
+
+    rot45() : Vec2 {
+        const cs = Math.cos(Math.PI / 4);
+
+        return new Vec2(cs * (this.x - this.y), cs * (this.x + this.y));
+    }
+
 }
 
 export class Vec3 extends Vec2 {
     typeName: string = "Vec3";
     z: number;
+
+    static nan() : Vec3 {
+        return new Vec3(NaN, NaN, NaN);
+    }
 
     constructor(x:number, y: number, z: number){
         super(x, y);

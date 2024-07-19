@@ -248,4 +248,80 @@ export class Axis extends Shape {
     }
 }
 
+export class Arrow extends Shape {
+    pos : Vec3 = Vec3.nan();
+    vec : Vec3 = Vec3.nan();
+    color : string;
+    points : Vec2[] = [];
+
+    constructor(view : View, pos : Vec3, vec : Vec3, color : string){
+        super(view);
+        this.pos = pos;
+        this.vec = vec;
+        this.color = color;
+    }
+    
+    setProjection() : void{
+        const st = this.view.project(this.pos);
+        const ed = this.view.project(this.pos.add(this.vec));
+
+        this.center = st.add(ed).mul(0.5);
+
+        const st2 = new Vec2(st.x, st.y);
+        const ed2 = new Vec2(ed.x, ed.y);
+
+
+        // 矢印の向き
+        const e1 = (new Vec2(ed.x - st.x, ed.y - st.y)).unit();
+
+        // 矢印の向きから90°回転
+        const e2 = e1.rot90();
+
+        // 矢印の向きから150°回転
+        const e3 = e1.rot(Math.PI * 5 / 6);
+
+        // 矢印の正三角形の辺の長さ
+        const l1 = 20;
+
+        // 矢印の正三角形の辺の1/3の長さ
+        const l2 = l1 / 3;
+
+        const p1 = ed2.add(e3.mul(l1));
+
+        const p2 = p1.add( e2.mul(-l2) );
+
+        const p3 = st2.add(e2.mul(l1 / 6));
+
+        const p4 = st2.add(e2.mul(- l1 / 6));
+
+        const p5 = p1.add(e2.mul(-l1 * 2 / 3));
+
+        const p6 = p1.add(e2.mul(-l1));
+
+        this.points = [ ed2, p1, p2, p3, p4, p5, p6 ];
+    }
+
+
+
+    draw() : void {
+        const ctx = this.view.ctx;
+
+        ctx.beginPath();
+        for(const [i, p] of this.points.entries()){
+            if(i == 0){
+
+                ctx.moveTo(p.x, p.y);
+            }
+            else{
+
+                ctx.lineTo(p.x, p.y);
+            }
+        }
+        ctx.closePath();
+
+        ctx.fillStyle = this.color;
+        ctx.fill();
+    }
+}
+
 }
