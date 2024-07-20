@@ -1,15 +1,8 @@
 namespace visualts {
 
-enum DataType {
-    One,
-    Two,
-    Three
-}
-
 class Data {
 
     dims : number[];
-    stride : number = 1;
     dt : Float32Array = new Float32Array();
 
     constructor(dims : number[]){
@@ -17,18 +10,9 @@ class Data {
         const size = dims.reduce((acc, cur) => acc * cur, 1);
         this.dt = new Float32Array(size);
     }
-
-    // at(i : number){
-    //     return this.dt[i];
-    // }
-
-    // at2(i : number, j : number){
-    //     return this.dt[i * this.stride + j];
-    // }
 }
 
 class Pair {
-
 }
 
 class Pair2x2 extends Pair {
@@ -120,7 +104,7 @@ class Array3x3 extends Data {
 
 export abstract class Shape {
     view : View;
-    center : Vec3 = new Vec3(NaN, NaN, NaN);
+    centerZ : number = NaN;
 
     abstract draw() : void;
     abstract setProjection() : void;
@@ -245,7 +229,8 @@ class Mesh2x2 extends Shape {
 class Polygon extends Primitive {
     points3D : Vec3[] = [];
     points2D : Vec2[] = [];
-    color : string;
+    material : [number, number, number] = [0, 0, 0];
+    color : string = "black";
 
     constructor(view : View, color : string = "black"){
         super(view);
@@ -255,10 +240,8 @@ class Polygon extends Primitive {
     setProjection() : void{        
         const vs = this.points3D.map(x => this.view.project(x));
 
-        const x = sum(vs.map(p => p.x));
-        const y = sum(vs.map(p => p.y));
         const z = sum(vs.map(p => p.z));
-        this.center = new Vec3(x / vs.length, y / vs.length, z / vs.length);
+        this.centerZ = z / vs.length;
 
         this.points2D = vs.map(p => new Vec2(p.x, p.y));
     }
@@ -281,10 +264,24 @@ class Polygon extends Primitive {
 
         ctx.fillStyle = this.color;
         ctx.fill();
+        ctx.strokeStyle = this.color;
+        ctx.stroke();       
+    }
+
+    norm() : Vec3 {
+        const a = this.points3D[2].sub(this.points3D[1]);
+        const b = this.points3D[0].sub(this.points3D[1]);
+
+        return a.cross(b).unit();
+    }
+
+    setColor(){
+        const l = this.norm().dot(this.view.lightDir);
+        const rgb = this.material.map(x => (255 * Math.max(0, Math.min(x * l))).toFixed() );
+        this.color = `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]})`;
+
     }
 }
-
-type Fnc = (num: number) => number;
 
 export class Graph extends Shape {
     xs : Float32Array = new Float32Array();
@@ -339,7 +336,7 @@ export class Arrow extends Polygon {
         const st = this.view.project(this.pos);
         const ed = this.view.project(this.pos.add(this.vec));
 
-        this.center = st.add(ed).mul(0.5);
+        this.centerZ = (st.z + ed.z) / 2;
 
         const st2 = new Vec2(st.x, st.y);
         const ed2 = new Vec2(ed.x, ed.y);
@@ -360,34 +357,55 @@ export class Arrow extends Polygon {
         // 矢印の正三角形の辺の1/3の長さ
         const l2 = l1 / 3;
 
-        const p1 = ed2.add(e3.mul(l1));
+        // 正三角形の高さ
+        const h = l1 * Math.sqrt(3) / 2;
 
-        const p2 = p1.add( e2.mul(-l2) );
+        const len = ed2.sub(st2).len();
+        if(len < h){
 
-        const p3 = st2.add(e2.mul(l1 / 6));
+            // 正三角形の底辺の1/2
+            const d = h / Math.sqrt(3);
 
-        const p4 = st2.add(e2.mul(- l1 / 6));
+            const p3 = st2.add(e2.mul(d));
 
-        const p5 = p1.add(e2.mul(-l1 * 2 / 3));
+            const p4 = st2.add(e2.mul(- d));
 
-        const p6 = p1.add(e2.mul(-l1));
+            this.points2D = [ ed2, p3, p4 ];
+        }
+        else{
 
-        this.points2D = [ ed2, p1, p2, p3, p4, p5, p6 ];
+            const p1 = ed2.add(e3.mul(l1));
+
+            const p2 = p1.add( e2.mul(-l2) );
+
+            const p3 = st2.add(e2.mul(l1 / 6));
+
+            const p4 = st2.add(e2.mul(- l1 / 6));
+
+            const p5 = p1.add(e2.mul(-l1 * 2 / 3));
+
+            const p6 = p1.add(e2.mul(-l1));
+
+            this.points2D = [ ed2, p1, p2, p3, p4, p5, p6 ];
+        }
+
     }
 }
 
-export class Surface extends Shape {
+export class Surface {
     X : Array2x2;
     Y : Array2x1;
     polygons : Polygon[] = [];
 
-    constructor(view : View, X : Array2x2, Y : Array2x1){
-        super(view);
+    constructor(X : Array2x2, Y : Array2x1){
         this.X = X;
         this.Y = Y;
     }
 
-    make(){
+    make(view : View){
+        const min = Math.min(... this.Y.dt);
+        const max = Math.max(... this.Y.dt);
+
         for(const i of range(this.X.dims[0] - 1)){
             for(const j of range(this.X.dims[1] - 1)){
                 const [x00, y00] = this.X.at(i    , j    );
@@ -405,22 +423,19 @@ export class Surface extends Shape {
                 const p10 = new Vec3(x10, y10, z10);
                 const p11 = new Vec3(x11, y11, z11);
 
-                const polygon = new Polygon(this.view);
+                const polygon = new Polygon(view);
                 polygon.points3D = [p00, p10, p11, p01];
+
+                const z = sum([z00, z01, z10, z11]) / 4;
+                const n = (z - min) / (max - min);
+
+                polygon.material = pseudoColor(n);
+                polygon.setColor();
 
                 this.polygons.push(polygon);
             }
         }
     }
-
-    setProjection() : void{        
-        this.polygons.forEach(p => p.setProjection());
-    }
-
-    draw(): void {
-        this.polygons.forEach(p => p.draw());
-    }
-
 }
 
 }

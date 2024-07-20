@@ -10,6 +10,7 @@ export class View {
 
     shapes : Shape[] = [];
 
+    lightDir = new Vec3(0, 0, 1);
     eye    : Vec3;
 
     min = new Vec2(NaN, NaN);
@@ -55,7 +56,7 @@ export class View {
         this.clear();
 
         this.shapes.forEach(c => c.setProjection());    
-        this.shapes.sort((a:Shape, b:Shape)=> a.center.z - b.center.z);
+        this.shapes.sort((a:Shape, b:Shape)=> a.centerZ - b.centerZ);
 
         this.shapes.forEach(c => c.draw());    
 
@@ -185,6 +186,7 @@ export class View {
 
 class Circle extends Shape {
     pos : Vec3;
+    posPrj : Vec3 = Vec3.nan();
     radius : number;
     color : string;
 
@@ -196,14 +198,15 @@ class Circle extends Shape {
     }
 
     setProjection() : void{        
-        this.center = this.view.project(this.pos);
+        this.posPrj = this.view.project(this.pos);
+        this.centerZ = this.posPrj.z;
     }
 
     draw() : void {
         const ctx = this.view.ctx;
         
         ctx.beginPath();
-        ctx.arc(this.center.x, this.center.y, this.radius, 0, 2 * Math.PI, false);
+        ctx.arc(this.posPrj.x, this.posPrj.y, this.radius, 0, 2 * Math.PI, false);
         ctx.fillStyle = this.color;
         ctx.fill();
         ctx.lineWidth = 1;
@@ -212,7 +215,7 @@ class Circle extends Shape {
     }
 }
 
-function colorStr(r : number, pos : Vec3){
+export function colorStr(r : number, pos : Vec3){
     const v1 = [pos.x, pos.y, pos.z].map(x => 0.5 * (1 + Math.max(-r , Math.min(r, x)) / r) );
     assert(v1.every(x => 0 <= x && x <= 1));
 
@@ -221,6 +224,8 @@ function colorStr(r : number, pos : Vec3){
 
     return `rgb(${v2[0]} ${v2[1]} ${v2[2]})`
 }
+
+
 
 function makeBall(){
     const r1 = 5;
@@ -274,21 +279,37 @@ function makeArrows(){
 
 function makeWave(){
     const r1 = 5;
-    const n = 16;
+    const n = 32;
 
     const X = new Array2x2(n, n);
     const Y = new Array2x1(n, n);
     for(const i of range(n)){
         for(const j of range(n)){
-            const x = 2 * Math.PI * i / n;
-            const y = 2 * Math.PI * j / n;
-            const z = r1 * (Math.cos(x) + Math.sin(y));
+            const th  = 2 * Math.PI * i / n - Math.PI;
+            const phi = 2 * Math.PI * j / n - Math.PI;
+            const x = r1 * th;
+            const y = r1 * phi;
+            const z = r1 * (Math.cos(th) + Math.sin(phi));
 
             X.set(i, j, x, y);
 
             Y.set(i, j, z);
         }    
     }
+
+    const surface = new Surface(X, Y);
+    surface.make(view);
+    view.shapes = view.shapes.concat(surface.polygons);
+
+    // for(const poly of surface.polygons){
+    //     const pos  = poly.points3D[1];
+    //     const norm = poly.norm().mul(1);
+
+    //     const color = colorStr(r1, pos);
+    //     const arrow = new Arrow(view, pos, norm, color);
+    //     view.shapes.push(arrow);
+    // }
+
 }
 
 export function bodyOnLoad(){
@@ -298,6 +319,7 @@ export function bodyOnLoad(){
 
     makeBall();
     makeArrows();
+    makeWave();
     window.requestAnimationFrame(view.drawShapes.bind(view));
 }
 }

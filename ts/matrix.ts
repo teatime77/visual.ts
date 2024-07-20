@@ -179,6 +179,14 @@ export class Vec3 extends Vec2 {
     rotZ(th : number) : Vec3 {
         return Mat3.rotZ(th).dot(this);
     }
+
+    cross(v : Vec3) : Vec3 {
+        return new Vec3(
+            this.y * v.z - this.z * v.y, 
+            this.z * v.x - this.x * v.z, 
+            this.x * v.y - this.y * v.x
+        );
+    }
 }
 
 export class Vec4 extends Vec3 {

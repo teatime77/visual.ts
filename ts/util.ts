@@ -64,5 +64,34 @@ export function sum(v : number[]) : number {
     return v.reduce((acc, cur) => acc + cur, 0);
 }
 
+export function pseudoColor(n : number) : [number, number, number] {
+    n = Math.max(0, Math.min(1, n));
+
+    let r:number, g:number, b:number;
+
+    if(n < 0.25){
+        b = 1;
+        g = n * 4;
+        r = 0;
+    }
+    else if(n < 0.5){
+        b = (0.5 - n) * 4;
+        g = 1;
+        r = 0;
+    }
+    else if(n < 0.75){
+        b = 0;
+        g = 1;
+        r = (n - 0.5) * 4;
+    }
+    else{
+        b = 0;
+        g = (1 - n) * 4;
+        r = 1;
+    }
+
+    return [r, g, b];
+}
+
 
 }
