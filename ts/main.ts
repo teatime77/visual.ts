@@ -270,7 +270,25 @@ function makeArrows(){
             view.shapes.push(arrow);
         }
     }
+}
 
+function makeWave(){
+    const r1 = 5;
+    const n = 16;
+
+    const X = new Array2x2(n, n);
+    const Y = new Array2x1(n, n);
+    for(const i of range(n)){
+        for(const j of range(n)){
+            const x = 2 * Math.PI * i / n;
+            const y = 2 * Math.PI * j / n;
+            const z = r1 * (Math.cos(x) + Math.sin(y));
+
+            X.set(i, j, x, y);
+
+            Y.set(i, j, z);
+        }    
+    }
 }
 
 export function bodyOnLoad(){
