@@ -176,12 +176,6 @@ export class View {
         const circle = new Circle(this, new Vec3(x, y, z), 1, color);
         this.shapes.push(circle);
     }
-
-    addCircle(x: number, y: number, z:number, radius : number, color : string){
-        const circle = new Circle(this, new Vec3(x, y, z), radius, color);
-        this.shapes.push(circle);
-    }
-
 }
 
 class Circle extends Shape {
@@ -228,6 +222,8 @@ export function colorStr(r : number, pos : Vec3){
 
 
 function makeBall(){
+    view.shapes = [];
+    
     const r1 = 5;
 
     const n1 = 16;
@@ -246,12 +242,14 @@ function makeBall(){
             const pos = new Vec3(x, y, z);
             const color = colorStr(r1, pos);
 
-            view.addCircle(pos.x, pos.y, pos.z, 5, color);
+            const circle = new Circle(view, new Vec3(pos.x, pos.y, pos.z), 5, color);
+            view.shapes.push(circle);
         }
     }
 }
 
 function makeArrows(){
+    view.shapes = [];
     const r1 = 5;
 
     const n1 = 8;
@@ -299,7 +297,7 @@ function makeWave(){
 
     const surface = new Surface(X, Y);
     surface.make(view);
-    view.shapes = view.shapes.concat(surface.polygons);
+    view.shapes = surface.polygons;
 
     // for(const poly of surface.polygons){
     //     const pos  = poly.points3D[1];
@@ -312,14 +310,21 @@ function makeWave(){
 
 }
 
+export function onChange(){
+    msg(`sel:${$sel("view-item").value}`);
+    switch($sel("view-item").value){
+    case "Ball": makeBall(); break;
+    case "Arrow": makeArrows(); break;
+    case "Wave": makeWave(); break;
+    }
+}
+
 export function bodyOnLoad(){
     const canvas = $("canvas") as HTMLCanvasElement;
     view = new View(canvas);
     msg("hello");
 
     makeBall();
-    makeArrows();
-    makeWave();
     window.requestAnimationFrame(view.drawShapes.bind(view));
 }
 }
