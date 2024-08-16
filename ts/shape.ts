@@ -226,6 +226,37 @@ class Mesh2x2 extends Shape {
     }
 }
 
+export class Circle extends Shape {
+    pos : Vec3;
+    posPrj : Vec3 = Vec3.nan();
+    radius : number;
+    color : string;
+
+    constructor(view : View, pos : Vec3, radius : number, color : string){
+        super(view);
+        this.pos = pos;
+        this.radius = radius;
+        this.color = color;
+    }
+
+    setProjection() : void{        
+        this.posPrj = this.view.project(this.pos);
+        this.centerZ = this.posPrj.z;
+    }
+
+    draw() : void {
+        const ctx = this.view.ctx;
+        
+        ctx.beginPath();
+        ctx.arc(this.posPrj.x, this.posPrj.y, this.radius, 0, 2 * Math.PI, false);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = this.color;
+        ctx.stroke();       
+    }
+}
+
 class Polygon extends Primitive {
     points3D : Vec3[] = [];
     points2D : Vec2[] = [];

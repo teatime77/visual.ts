@@ -2,7 +2,7 @@ var glMatrix: any;
 
 namespace visualts {
 
-let view : View;
+export let aView : View;
 
 export class View {
     canvas : HTMLCanvasElement;
@@ -37,10 +37,7 @@ export class View {
         this.ctx = canvas.getContext("2d")!;
         assert(this.ctx != null);
 
-        canvas.addEventListener("pointerdown", this.pointerdown.bind(this));
-        canvas.addEventListener('pointermove', this.pointermove.bind(this));
-        canvas.addEventListener("pointerup"  , this.pointerup.bind(this));   
-        canvas.addEventListener("wheel"      , this.wheel.bind(this) );
+        viewEvent(this);
 
         this.ctx.fillStyle = "rgb(200 0 0)";
         this.ctx.fillRect(10, 10, 50, 50);
@@ -178,37 +175,6 @@ export class View {
     }
 }
 
-class Circle extends Shape {
-    pos : Vec3;
-    posPrj : Vec3 = Vec3.nan();
-    radius : number;
-    color : string;
-
-    constructor(view : View, pos : Vec3, radius : number, color : string){
-        super(view);
-        this.pos = pos;
-        this.radius = radius;
-        this.color = color;
-    }
-
-    setProjection() : void{        
-        this.posPrj = this.view.project(this.pos);
-        this.centerZ = this.posPrj.z;
-    }
-
-    draw() : void {
-        const ctx = this.view.ctx;
-        
-        ctx.beginPath();
-        ctx.arc(this.posPrj.x, this.posPrj.y, this.radius, 0, 2 * Math.PI, false);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = this.color;
-        ctx.stroke();       
-    }
-}
-
 export function colorStr(r : number, pos : Vec3){
     const v1 = [pos.x, pos.y, pos.z].map(x => 0.5 * (1 + Math.max(-r , Math.min(r, x)) / r) );
     assert(v1.every(x => 0 <= x && x <= 1));
@@ -219,10 +185,8 @@ export function colorStr(r : number, pos : Vec3){
     return `rgb(${v2[0]} ${v2[1]} ${v2[2]})`
 }
 
-
-
-function makeBall(){
-    view.shapes = [];
+export function makeBall(){
+    aView.shapes = [];
     
     const r1 = 5;
 
@@ -242,14 +206,14 @@ function makeBall(){
             const pos = new Vec3(x, y, z);
             const color = colorStr(r1, pos);
 
-            const circle = new Circle(view, new Vec3(pos.x, pos.y, pos.z), 5, color);
-            view.shapes.push(circle);
+            const circle = new Circle(aView, new Vec3(pos.x, pos.y, pos.z), 5, color);
+            aView.shapes.push(circle);
         }
     }
 }
 
 function makeArrows(){
-    view.shapes = [];
+    aView.shapes = [];
     const r1 = 5;
 
     const n1 = 8;
@@ -269,8 +233,8 @@ function makeArrows(){
             const vec = new Vec3(x, y, z);
             const color = colorStr(r1, pos);
 
-            const arrow = new Arrow(view, pos, vec, color);
-            view.shapes.push(arrow);
+            const arrow = new Arrow(aView, pos, vec, color);
+            aView.shapes.push(arrow);
         }
     }
 }
@@ -296,8 +260,8 @@ function makeWave(){
     }
 
     const surface = new Surface(X, Y);
-    surface.make(view);
-    view.shapes = surface.polygons;
+    surface.make(aView);
+    aView.shapes = surface.polygons;
 
     // for(const poly of surface.polygons){
     //     const pos  = poly.points3D[1];
@@ -317,14 +281,5 @@ export function onChange(){
     case "Arrow": makeArrows(); break;
     case "Wave": makeWave(); break;
     }
-}
-
-export function bodyOnLoad(){
-    const canvas = $("canvas") as HTMLCanvasElement;
-    view = new View(canvas);
-    msg("hello");
-
-    makeBall();
-    window.requestAnimationFrame(view.drawShapes.bind(view));
 }
 }
