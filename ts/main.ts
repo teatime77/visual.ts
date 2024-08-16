@@ -1,5 +1,3 @@
-var glMatrix: any;
-
 namespace visualts {
 
 export let aView : View;
@@ -26,9 +24,6 @@ export class View {
     lastMouseX : number = NaN;
     lastMouseY : number = NaN;
 
-    ProjViewMatrix!               : Float32Array;
-    viewMatrix!        : Float32Array;
-
     frustum : Mat4;
 
     constructor(canvas : HTMLCanvasElement){
@@ -38,12 +33,6 @@ export class View {
         assert(this.ctx != null);
 
         viewEvent(this);
-
-        this.ctx.fillStyle = "rgb(200 0 0)";
-        this.ctx.fillRect(10, 10, 50, 50);
-
-        this.ctx.fillStyle = "rgb(0 0 200 / 50%)";
-        this.ctx.fillRect(30, 30, 50, 50);
 
         this.frustum = this.makeFrustum();
         msg(`frustum\n${this.frustum.str()}`);
@@ -128,36 +117,11 @@ export class View {
         this.camDistance += 0.002 * ev.deltaY;
         $inp("eye-z").value = Math.round(this.camDistance).toFixed();
 
-
         this.updateEye();
     }
 
-    getTransformationMatrix() {
-
-        this.setViewMatrix();
-
-        const projectionMatrix = glMatrix.mat4.create();
-        glMatrix.mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, 1, 1, 100.0);
-
-        this.ProjViewMatrix = glMatrix.mat4.create();
-        glMatrix.mat4.mul(this.ProjViewMatrix, projectionMatrix, this.viewMatrix);
-    }
-    
-    setViewMatrix() {
-        const camY = this.camDistance * Math.cos(this.camTheta);
-        const r = this.camDistance * Math.abs(Math.sin(this.camTheta));
-        const camZ = r * Math.cos(this.camPhi);
-        const camX = r * Math.sin(this.camPhi);
-
-        this.viewMatrix = glMatrix.mat4.create();
-        const cameraPosition = [camX, camY, camZ];
-        const lookAtPosition = [0, 0, 0];
-        const upDirection    = [0, 1, 0];
-        glMatrix.mat4.lookAt(this.viewMatrix, cameraPosition, lookAtPosition, upDirection);
-    }
-
     project(pos : Vec3) : Vec3 {
-        const w = pos.rotX(this.camTheta).rotY(this.camPhi);//.sub(this.eye);
+        const w = pos.rotX(this.camTheta).rotY(this.camPhi);
         w.z -= this.camDistance;
 
         w.x /= - 0.4 * w.z;
