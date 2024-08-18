@@ -6,16 +6,23 @@ export class View {
     canvas : HTMLCanvasElement;
     ctx    : CanvasRenderingContext2D;
 
+    canvasHalfW : number;
+    canvasHalfH : number;
+
     shapes : Shape[] = [];
 
     lightDir = new Vec3(0, 0, 1);
-    eye    : Vec3;
 
-    min = new Vec2(NaN, NaN);
-    max = new Vec2(NaN, NaN);
+    FoV : number = toRadian(60);
+    tanHalfFoV : number = Math.tan(0.5 * this.FoV);
+    aspectRatio : number;
+
+    eye    : Vec3;
+    eyeR!  : Mat3;
+    target : Vec3 = new Vec3(0, 0, 0);
 
     camDistance : number = 30;
-    camTheta : number = 90;
+    camTheta : number = 0;
     camPhi   : number = 0;
 
     camThetaSave : number = 0;
@@ -24,40 +31,32 @@ export class View {
     lastMouseX : number = NaN;
     lastMouseY : number = NaN;
 
-    frustum : Mat4;
-
     constructor(canvas : HTMLCanvasElement){
         this.canvas = canvas;
         this.eye    = new Vec3(0, 0, - this.camDistance)
         this.ctx = canvas.getContext("2d")!;
         assert(this.ctx != null);
 
-        viewEvent(this);
+        const rc = canvas.getBoundingClientRect();
+        this.canvasHalfW = rc.width  / 2;
+        this.canvasHalfH = rc.height / 2;
 
-        this.frustum = this.makeFrustum();
-        msg(`frustum\n${this.frustum.str()}`);
+        this.aspectRatio = rc.width / rc.height;
+
+        this.updateEye();
+
+        viewEvent(this);
     }
 
     drawShapes(){
         this.clear();
 
         this.shapes.forEach(c => c.setProjection());    
-        this.shapes.sort((a:Shape, b:Shape)=> a.centerZ - b.centerZ);
+        this.shapes.sort((a:Shape, b:Shape)=> b.centerZ - a.centerZ);
 
         this.shapes.forEach(c => c.draw());    
 
         window.requestAnimationFrame(this.drawShapes.bind(this));
-    }
-
-    makeFrustum(){
-        const left = -8;
-        const right = 8;
-        const bottom = -8;
-        const top = 8;
-        const near = 3;
-        const far = 15;
-    
-        return frustum(left, right, bottom, top, near, far);
     }
 
     clear(){
@@ -66,14 +65,28 @@ export class View {
     }
 
     updateEye(){
-        this.eye.z = this.camDistance * Math.cos(this.camTheta);
-        const r = this.camDistance * Math.sin(this.camTheta);
+        this.eye = new Vec3(0, 0, - this.camDistance).rotY(this.camPhi).rotX(this.camTheta);
 
-        this.eye.x = r * Math.cos(this.camPhi);
-        this.eye.y = r * Math.sin(this.camPhi);
+        $inp("eye-x").value = this.eye.x.toFixed();
+        $inp("eye-y").value = this.eye.y.toFixed();
+        $inp("eye-z").value = this.eye.z.toFixed();
 
-        // msg(`theta:${(this.camTheta * 180 / Math.PI).toFixed(1)} phi:${(this.camPhi * 180 / Math.PI).toFixed(1)}`)
-        msg(`eye:${this.eye.str()}`);
+        this.updateViewMatrix();
+    }
+
+    updateViewMatrix(){
+        // 視点の上向き
+        const up = new Vec3(0, 1, 0);
+
+        const ez = this.target.sub(this.eye).unit();
+        const ex = up.cross(ez).unit();
+        const ey = ez.cross(ex);
+
+        this.eyeR = new Mat3([
+            [ ex.x, ex.y, ex.z ],
+            [ ey.x, ey.y, ey.z ],
+            [ ez.x, ez.y, ez.z ],
+        ]);
     }
 
     pointerdown(ev : PointerEvent){
@@ -97,10 +110,10 @@ export class View {
         var newY = ev.clientY;
 
         this.camTheta = this.camThetaSave + (newY - this.lastMouseY) / 300;
-        this.camPhi   = this.camPhiSave - (newX - this.lastMouseX) / 300;
+        this.camPhi   = this.camPhiSave + (newX - this.lastMouseX) / 300;
 
-        $inp("theta").value = Math.round(this.camTheta * 180 / Math.PI).toFixed();
-        $inp("phi").value = Math.round(this.camPhi * 180 / Math.PI).toFixed();
+        $inp("theta").value = Math.round(toDegree(this.camTheta)).toFixed();
+        $inp("phi").value = Math.round(toDegree(this.camPhi)).toFixed();
 
         this.updateEye();
     }
@@ -111,9 +124,6 @@ export class View {
     }
 
     wheel(ev : WheelEvent){
-        // ホイール操作によるスクロールを無効化する
-        ev.preventDefault();
-    
         this.camDistance += 0.002 * ev.deltaY;
         $inp("eye-z").value = Math.round(this.camDistance).toFixed();
 
@@ -121,16 +131,16 @@ export class View {
     }
 
     project(pos : Vec3) : Vec3 {
-        const w = pos.rotX(this.camTheta).rotY(this.camPhi);
-        w.z -= this.camDistance;
+        const pos2 = this.eyeR.dot(pos.sub(this.eye));
 
-        w.x /= - 0.4 * w.z;
-        w.y /= - 0.4 * w.z;
+        // height = distance * tan(0.5 * FoV) 
+        const h1 = Math.abs(pos2.z) * this.tanHalfFoV;
+        const w1 = h1 * this.aspectRatio;
 
-        w.x = 320 + w.x * 320;
-        w.y = 320 + w.y * 320;
+        const y = this.canvasHalfH - this.canvasHalfH * pos2.y / h1;
+        const x = this.canvasHalfW + this.canvasHalfW * pos2.x / w1;
 
-        return w;
+        return new Vec3(x, y, pos2.z);
     }
 
     addPoint(x: number, y: number, z:number, color : string = "black"){
@@ -147,6 +157,17 @@ export function colorStr(r : number, pos : Vec3){
     assert(v2.every(x => 0 <= x && x <= 255));
 
     return `rgb(${v2[0]} ${v2[1]} ${v2[2]})`
+}
+
+export function makeAxis(){
+    aView.shapes = [];
+
+    const axis_len = 5.0;
+    const x_axis = new Arrow(aView, Vec3.zero(), new Vec3(axis_len, 0, 0), "red");
+    const y_axis = new Arrow(aView, Vec3.zero(), new Vec3(0, axis_len, 0), "green");
+    const z_axis = new Arrow(aView, Vec3.zero(), new Vec3(0, 0, axis_len), "blue");
+
+    aView.shapes.push(x_axis, y_axis, z_axis);
 }
 
 export function makeBall(){
@@ -242,6 +263,7 @@ export function onChange(){
     msg(`sel:${$sel("view-item").value}`);
     switch($sel("view-item").value){
     case "Ball": makeBall(); break;
+    case "Axis": makeAxis(); break;
     case "Arrow": makeArrows(); break;
     case "Wave": makeWave(); break;
     }

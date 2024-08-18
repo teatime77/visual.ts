@@ -41,7 +41,7 @@ export class Vec2 {
     }
 
     len(): number {
-        return Math.sqrt(this.len2());
+        return Math.hypot(this.x, this.y);
     }
 
     dist(pt:Vec2) : number {
@@ -100,6 +100,10 @@ export class Vec3 extends Vec2 {
         return new Vec3(NaN, NaN, NaN);
     }
 
+    static zero() : Vec3 {
+        return new Vec3(0, 0, 0);
+    }
+
     constructor(x:number, y: number, z: number){
         super(x, y);
         this.z = z;
@@ -133,16 +137,16 @@ export class Vec3 extends Vec2 {
         return new Vec3(c * this.x, c * this.y, c * this.z);
     }
 
+    len(): number {
+        return Math.hypot(this.x, this.y, this.z);
+    }
+
     len2(): number {
         return this.x * this.x + this.y * this.y + this.z * this.z;
     }
 
     dist(pt:Vec3) : number {
-        const dx = pt.x - this.x;
-        const dy = pt.y - this.y;
-        const dz = pt.z - this.z;
-
-        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return Math.hypot(pt.x - this.x, pt.y - this.y, pt.z - this.z);
     }
 
     dot(pt:Vec3) : number{
@@ -494,23 +498,5 @@ export class Mat4 extends Mat {
         return this.dt.map(row => `[ ${row.map(x => x.toFixed(1)).join(", ") } ]`).join("\n");
     }
 }
-
-export function frustum(left : number, right : number, bottom : number, top : number, near : number, far : number) {
-    let rl = 1 / (right - left);
-    let tb = 1 / (top - bottom);
-    let nf = 1 / (near - far);
-
-    const dt : number[][] = [
-        [ near * 2 * rl, 0            , (right + left) * rl, 0                   ],
-        [ 0            , near * 2 * tb, (top + bottom) * tb, 0                   ],
-        [ 0            , 0            , (far + near) * nf  , far * near * 2 * nf ],
-        [ 0            , 0            , -1                 , 0                   ]
-    ];
-
-    const m4 = new Mat4();
-    m4.dt = dt;
-
-    return m4;
-  }
 
 }

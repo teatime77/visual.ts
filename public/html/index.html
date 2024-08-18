@@ -14,15 +14,16 @@
 <body onload="visualts.bodyOnLoad()">
  <canvas id="canvas" width="640" height="640" style="width: 640px; height: 640px; border-style: ridge;"></canvas>
 <p></p>
-theta <input type="number" min="0" max="180" step="1" value="90" id="theta" /><br/>
+theta <input type="number" min="-180" max="180" step="1" value="0" id="theta" /><br/>
 phi <input type="number" min="-180" max="180" step="1" value="0" id="phi" /><br/>
 
-eye-x <input type="number" min="-20" max="20" step="1" value="0"  id="eye-x" /><br/>
-eye-y <input type="number" min="-20" max="20" step="1" value="0"  id="eye-y" /><br/>
-eye-z <input type="number" min="5"   max="40" step="1" value="30" id="eye-z" /><br/>
+eye-x <input type="number" min="-20" max="20" step="0.1" value="0"  id="eye-x" /><br/>
+eye-y <input type="number" min="-20" max="20" step="0.1" value="0"  id="eye-y" /><br/>
+eye-z <input type="number" min="5"   max="40" step="0.1" value="30" id="eye-z" /><br/>
 
 <select id="view-item">
   <option selected>Ball</option>
+  <option>Axis</option>
   <option>Arrow</option>
   <option>Wave</option>
 </select>
