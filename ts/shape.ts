@@ -105,15 +105,14 @@ class Array3x3 extends Data {
 export abstract class Shape {
     static maxId = 0;
     id : number;
-    view : View;
     centerZ : number = NaN;
 
-    abstract draw() : void;
-    abstract setProjection() : void;
+    abstract draw(view : View) : void;
+    abstract setProjection(view : View) : void;
 
     constructor(view : View){
         this.id = Shape.maxId++;
-        this.view = view;
+        view = view;
     }
 }
 
@@ -125,14 +124,14 @@ abstract class Primitive extends Shape {
  * @description 2D散布図
  */
 class Scatter2x0 extends Shape {
-    make(X : Array1x2){
+    make(view : View, X : Array1x2){
         for(const i of range(X.dims[0])){
             const [x, y] = X.at(i);
-            this.view.addPoint(x, y, 0);
+            view.addPoint(x, y, 0);
         }
     }
 
-    setProjection() : void{        
+    setProjection(view : View) : void{        
         throw new MyError();
     }
 
@@ -154,7 +153,7 @@ class Scatter2x1 extends Shape {
         }
     }
 
-    setProjection() : void{        
+    setProjection(view : View) : void{        
         throw new MyError();
     }
 
@@ -174,7 +173,7 @@ class Mesh1x1 extends Shape {
         }
     }
 
-    setProjection() : void{        
+    setProjection(view : View) : void{        
         throw new MyError();
     }
 
@@ -197,7 +196,7 @@ class Mesh2x1 extends Shape {
         }
     }
 
-    setProjection() : void{        
+    setProjection(view : View) : void{        
         throw new MyError();
     }
 
@@ -220,7 +219,7 @@ class Mesh2x2 extends Shape {
         }
     }
 
-    setProjection() : void{        
+    setProjection(view : View) : void{        
         throw new MyError();
     }
 
@@ -242,13 +241,13 @@ export class Circle extends Shape {
         this.color = color;
     }
 
-    setProjection() : void{        
-        this.posPrj = this.view.project(this.pos);
+    setProjection(view : View) : void{        
+        this.posPrj = view.project(this.pos);
         this.centerZ = this.posPrj.z;
     }
 
-    draw() : void {
-        const ctx = this.view.ctx;
+    draw(view : View) : void {
+        const ctx = view.ctx;
         
         ctx.beginPath();
         ctx.arc(this.posPrj.x, this.posPrj.y, this.radius, 0, 2 * Math.PI, false);
@@ -272,8 +271,8 @@ class Polygon extends Primitive {
         this.color = color;
     }
 
-    setProjection() : void{        
-        const vs = this.points3D.map(x => this.view.project(x));
+    setProjection(view : View) : void{        
+        const vs = this.points3D.map(x => view.project(x));
 
         const z = sum(vs.map(p => p.z));
         this.centerZ = z / vs.length;
@@ -281,8 +280,8 @@ class Polygon extends Primitive {
         this.points2D = vs.map(p => new Vec2(p.x, p.y));
     }
 
-    draw() : void {
-        const ctx = this.view.ctx;
+    draw(view : View) : void {
+        const ctx = view.ctx;
 
         ctx.beginPath();
         for(const [i, p] of this.points2D.entries()){
@@ -310,8 +309,8 @@ class Polygon extends Primitive {
         return a.cross(b).unit();
     }
 
-    setColor(){
-        const l = this.norm().dot(this.view.lightDir);
+    setColor(view : View){
+        const l = this.norm().dot(view.lightDir);
         const rgb = this.material.map(x => Math.max(0, Math.min(255, 255 * x * l)).toFixed() );
         this.color = `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]})`;
 
@@ -323,8 +322,8 @@ export class Triangle extends Polygon {
         super(view, points3d, color);
     }
 
-    setColor(){
-        const l = this.norm().dot(this.view.lightDir);
+    setColor(view : View){
+        const l = this.norm().dot(view.lightDir);
         const rgb = this.material.map(x => Math.max(0, Math.min(255, 255 * x * l)).toFixed() );
         this.color = `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]})`;
 
@@ -344,7 +343,7 @@ export class Graph extends Shape {
 
     }
 
-    setProjection() : void{        
+    setProjection(view : View) : void{        
         throw new MyError();
     }
 
@@ -362,7 +361,7 @@ export class Axis extends Shape {
         super(view);
     }
 
-    setProjection() : void{        
+    setProjection(view : View) : void{        
         throw new MyError();
     }
 
@@ -381,9 +380,9 @@ export class Arrow extends Polygon {
         this.vec = vec;
     }
     
-    setProjection() : void{
-        const st = this.view.project(this.pos);
-        const ed = this.view.project(this.pos.add(this.vec));
+    setProjection(view : View) : void{
+        const st = view.project(this.pos);
+        const ed = view.project(this.pos.add(this.vec));
 
         this.centerZ = (st.z + ed.z) / 2;
 
@@ -478,7 +477,7 @@ export class Surface {
                 const n = (z - min) / (max - min);
 
                 polygon.material = pseudoColor(n);
-                polygon.setColor();
+                polygon.setColor(view);
 
                 this.polygons.push(polygon);
             }

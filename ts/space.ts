@@ -96,7 +96,7 @@ function makeRegularIcosahedron(view : View) : [Triangle[], number] {
                         const tri = new Triangle(view, sortPoints(p1, p2, p3));
 
                         tri.material = [1, 1, 1];
-                        tri.setColor();
+                        tri.setColor(view);
                         triangles.push(tri);
                     }
                 }
@@ -157,7 +157,7 @@ function divideTriangle(view : View, triangles : Triangle[], sphere_r : number) 
 }
 
 export function makeGeodesicPolyhedron(view : View){
-    makeAxis();
+    makeAxis(view);
 
     let [triangles, sphere_r] = makeRegularIcosahedron(view);
 

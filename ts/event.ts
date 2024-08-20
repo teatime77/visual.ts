@@ -2,14 +2,14 @@ namespace visualts {
 
 export function bodyOnLoad(){
     const canvas = $("canvas") as HTMLCanvasElement;
-    aView = new View(canvas);
-    makeGeodesicPolyhedron(aView);
+    const view = new View(canvas);
+    makeGeodesicPolyhedron(view);
 
-    $("view-item").addEventListener("change", onChange)
+    $("view-item").addEventListener("change", view.onChange.bind(view))
     msg("hello");
 
-    makeBall();
-    window.requestAnimationFrame(aView.drawShapes.bind(aView));
+    makeBall(view);
+    window.requestAnimationFrame(view.drawShapes.bind(view));
 }
 
 export function viewEvent(view : View){

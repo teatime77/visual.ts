@@ -1,7 +1,5 @@
 namespace visualts {
 
-export let aView : View;
-
 export class View {
     canvas : HTMLCanvasElement;
     ctx    : CanvasRenderingContext2D;
@@ -51,10 +49,10 @@ export class View {
     drawShapes(){
         this.clear();
 
-        this.shapes.forEach(c => c.setProjection());    
+        this.shapes.forEach(c => c.setProjection(this));    
         this.shapes.sort((a:Shape, b:Shape)=> b.centerZ - a.centerZ);
 
-        this.shapes.forEach(c => c.draw());    
+        this.shapes.forEach(c => c.draw(this));    
 
         window.requestAnimationFrame(this.drawShapes.bind(this));
     }
@@ -147,6 +145,17 @@ export class View {
         const circle = new Circle(this, new Vec3(x, y, z), 1, color);
         this.shapes.push(circle);
     }
+
+    onChange(){
+        msg(`sel:${$sel("view-item").value}`);
+        switch($sel("view-item").value){
+        case "Ball": makeBall(this); break;
+        case "Axis": makeAxis(this); break;
+        case "Arrow": makeArrows(this); break;
+        case "Wave": makeWave(this); break;
+        case "Geodesic": makeGeodesicPolyhedron(this);
+        }
+    }
 }
 
 export function colorStr(r : number, pos : Vec3){
@@ -159,19 +168,19 @@ export function colorStr(r : number, pos : Vec3){
     return `rgb(${v2[0]} ${v2[1]} ${v2[2]})`
 }
 
-export function makeAxis(){
-    aView.shapes = [];
+export function makeAxis(view : View){
+    view.shapes = [];
 
     const axis_len = 5.0;
-    const x_axis = new Arrow(aView, Vec3.zero(), new Vec3(axis_len, 0, 0), "red");
-    const y_axis = new Arrow(aView, Vec3.zero(), new Vec3(0, axis_len, 0), "green");
-    const z_axis = new Arrow(aView, Vec3.zero(), new Vec3(0, 0, axis_len), "blue");
+    const x_axis = new Arrow(view, Vec3.zero(), new Vec3(axis_len, 0, 0), "red");
+    const y_axis = new Arrow(view, Vec3.zero(), new Vec3(0, axis_len, 0), "green");
+    const z_axis = new Arrow(view, Vec3.zero(), new Vec3(0, 0, axis_len), "blue");
 
-    aView.shapes.push(x_axis, y_axis, z_axis);
+    view.shapes.push(x_axis, y_axis, z_axis);
 }
 
-export function makeBall(){
-    aView.shapes = [];
+export function makeBall(view : View){
+    view.shapes = [];
     
     const r1 = 5;
 
@@ -191,14 +200,14 @@ export function makeBall(){
             const pos = new Vec3(x, y, z);
             const color = colorStr(r1, pos);
 
-            const circle = new Circle(aView, new Vec3(pos.x, pos.y, pos.z), 5, color);
-            aView.shapes.push(circle);
+            const circle = new Circle(view, new Vec3(pos.x, pos.y, pos.z), 5, color);
+            view.shapes.push(circle);
         }
     }
 }
 
-function makeArrows(){
-    aView.shapes = [];
+function makeArrows(view : View){
+    view.shapes = [];
     const r1 = 5;
 
     const n1 = 8;
@@ -218,13 +227,13 @@ function makeArrows(){
             const vec = new Vec3(x, y, z);
             const color = colorStr(r1, pos);
 
-            const arrow = new Arrow(aView, pos, vec, color);
-            aView.shapes.push(arrow);
+            const arrow = new Arrow(view, pos, vec, color);
+            view.shapes.push(arrow);
         }
     }
 }
 
-function makeWave(){
+function makeWave(view : View){
     const r1 = 5;
     const n = 32;
 
@@ -245,8 +254,8 @@ function makeWave(){
     }
 
     const surface = new Surface(X, Y);
-    surface.make(aView);
-    aView.shapes = surface.polygons;
+    surface.make(view);
+    view.shapes = surface.polygons;
 
     // for(const poly of surface.polygons){
     //     const pos  = poly.points3D[1];
@@ -259,14 +268,4 @@ function makeWave(){
 
 }
 
-export function onChange(){
-    msg(`sel:${$sel("view-item").value}`);
-    switch($sel("view-item").value){
-    case "Ball": makeBall(); break;
-    case "Axis": makeAxis(); break;
-    case "Arrow": makeArrows(); break;
-    case "Wave": makeWave(); break;
-    case "Geodesic": makeGeodesicPolyhedron(aView);
-    }
-}
 }
