@@ -93,7 +93,7 @@ function makeRegularIcosahedron(view : View) : [Triangle[], number] {
                     if (Math.abs(p2.dist(p3) - 2) < 0.01 && Math.abs(p1.dist(p3) - 2) < 0.01) {
 
 
-                        const tri = new Triangle(view, sortPoints(p1, p2, p3));
+                        const tri = new Triangle(sortPoints(p1, p2, p3));
 
                         tri.material = [1, 1, 1];
                         tri.setColor(view);
@@ -134,10 +134,10 @@ function divideTriangle(view : View, triangles : Triangle[], sphere_r : number) 
             const [p1, p2, p3] = tri.points3D;
             const [m1, m2, m3] = mid_points;
 
-            const tri1 = new Triangle(view, sortPoints(m1, p2, m2));
-            const tri2 = new Triangle(view, sortPoints(m2, p3, m3));
-            const tri3 = new Triangle(view, sortPoints(m3, p1, m1));
-            const tri4 = new Triangle(view, sortPoints(m1, m2, m3));
+            const tri1 = new Triangle(sortPoints(m1, p2, m2));
+            const tri2 = new Triangle(sortPoints(m2, p3, m3));
+            const tri3 = new Triangle(sortPoints(m3, p1, m1));
+            const tri4 = new Triangle(sortPoints(m1, m2, m3));
 
             for(const t of [tri1, tri2, tri3, tri4]){
                 const p = t.points3D[0];

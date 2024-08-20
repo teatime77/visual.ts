@@ -12,7 +12,8 @@ export class View {
     lightDir = new Vec3(0, 0, 1);
 
     FoV : number = toRadian(60);
-    tanHalfFoV : number = Math.tan(0.5 * this.FoV);
+    tanHalfY : number = Math.tan(0.5 * this.FoV);
+    tanHalfX : number;
     aspectRatio : number;
 
     eye    : Vec3;
@@ -40,6 +41,7 @@ export class View {
         this.canvasHalfH = rc.height / 2;
 
         this.aspectRatio = rc.width / rc.height;
+        this.tanHalfX = this.aspectRatio * this.tanHalfY;
 
         this.updateEye();
 
@@ -132,7 +134,7 @@ export class View {
         const pos2 = this.eyeR.dot(this.eye.sub(pos));
 
         // height = distance * tan(0.5 * FoV) 
-        const h1 = Math.abs(pos2.z) * this.tanHalfFoV;
+        const h1 = Math.abs(pos2.z) * this.tanHalfY;
         const w1 = h1 * this.aspectRatio;
 
         const y = this.canvasHalfH - this.canvasHalfH * pos2.y / h1;
@@ -142,7 +144,7 @@ export class View {
     }
 
     addPoint(x: number, y: number, z:number, color : string = "black"){
-        const circle = new Circle(this, new Vec3(x, y, z), 1, color);
+        const circle = new Circle(new Vec3(x, y, z), 1, color);
         this.shapes.push(circle);
     }
 
@@ -172,9 +174,9 @@ export function makeAxis(view : View){
     view.shapes = [];
 
     const axis_len = 5.0;
-    const x_axis = new Arrow(view, Vec3.zero(), new Vec3(axis_len, 0, 0), "red");
-    const y_axis = new Arrow(view, Vec3.zero(), new Vec3(0, axis_len, 0), "green");
-    const z_axis = new Arrow(view, Vec3.zero(), new Vec3(0, 0, axis_len), "blue");
+    const x_axis = new Arrow(Vec3.zero(), new Vec3(axis_len, 0, 0), "red");
+    const y_axis = new Arrow(Vec3.zero(), new Vec3(0, axis_len, 0), "green");
+    const z_axis = new Arrow(Vec3.zero(), new Vec3(0, 0, axis_len), "blue");
 
     view.shapes.push(x_axis, y_axis, z_axis);
 }
@@ -200,7 +202,7 @@ export function makeBall(view : View){
             const pos = new Vec3(x, y, z);
             const color = colorStr(r1, pos);
 
-            const circle = new Circle(view, new Vec3(pos.x, pos.y, pos.z), 5, color);
+            const circle = new Circle(new Vec3(pos.x, pos.y, pos.z), 5, color);
             view.shapes.push(circle);
         }
     }
@@ -227,7 +229,7 @@ function makeArrows(view : View){
             const vec = new Vec3(x, y, z);
             const color = colorStr(r1, pos);
 
-            const arrow = new Arrow(view, pos, vec, color);
+            const arrow = new Arrow(pos, vec, color);
             view.shapes.push(arrow);
         }
     }

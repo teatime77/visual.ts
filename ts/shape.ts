@@ -110,9 +110,8 @@ export abstract class Shape {
     abstract draw(view : View) : void;
     abstract setProjection(view : View) : void;
 
-    constructor(view : View){
+    constructor(){
         this.id = Shape.maxId++;
-        view = view;
     }
 }
 
@@ -228,14 +227,35 @@ class Mesh2x2 extends Shape {
     }
 }
 
+export class LineSegment extends Shape {    
+    p1: Vec2 = new Vec2(0,0);
+    p2: Vec2 = new Vec2(0,0);
+    p12: Vec2 = new Vec2(0,0);
+    e: Vec2 = new Vec2(0,0);
+
+    constructor(){
+        super();
+    }
+
+    draw(view : View) : void {
+
+    }
+
+    setProjection(view : View) : void {
+        
+    }
+
+
+}
+
 export class Circle extends Shape {
     pos : Vec3;
     posPrj : Vec3 = Vec3.nan();
     radius : number;
     color : string;
 
-    constructor(view : View, pos : Vec3, radius : number, color : string){
-        super(view);
+    constructor(pos : Vec3, radius : number, color : string){
+        super();
         this.pos = pos;
         this.radius = radius;
         this.color = color;
@@ -265,8 +285,8 @@ class Polygon extends Primitive {
     material : [number, number, number] = [0, 0, 0];
     color : string = "black";
 
-    constructor(view : View, points3d : Vec3[], color : string = "black"){
-        super(view);
+    constructor(points3d : Vec3[], color : string = "black"){
+        super();
         this.points3D = points3d.slice();
         this.color = color;
     }
@@ -318,8 +338,8 @@ class Polygon extends Primitive {
 }
 
 export class Triangle extends Polygon {
-    constructor(view : View, points3d:Vec3[], color : string = "black"){
-        super(view, points3d, color);
+    constructor(points3d:Vec3[], color : string = "black"){
+        super(points3d, color);
     }
 
     setColor(view : View){
@@ -335,8 +355,8 @@ export class Graph extends Shape {
     xs : Float32Array = new Float32Array();
     
 
-    constructor(view : View){
-        super(view);
+    constructor(){
+        super();
     }
 
     setMinMax(){
@@ -357,8 +377,8 @@ export class Axis extends Shape {
     min : number = NaN;
     max : number = NaN;
 
-    constructor(view : View){
-        super(view);
+    constructor(){
+        super();
     }
 
     setProjection(view : View) : void{        
@@ -374,8 +394,8 @@ export class Arrow extends Polygon {
     pos : Vec3 = Vec3.nan();
     vec : Vec3 = Vec3.nan();
 
-    constructor(view : View, pos : Vec3, vec : Vec3, color : string){
-        super(view, [], color);
+    constructor(pos : Vec3, vec : Vec3, color : string){
+        super([], color);
         this.pos = pos;
         this.vec = vec;
     }
@@ -471,7 +491,7 @@ export class Surface {
                 const p10 = new Vec3(x10, y10, z10);
                 const p11 = new Vec3(x11, y11, z11);
 
-                const polygon = new Polygon(view, [p00, p10, p11, p01]);
+                const polygon = new Polygon([p00, p10, p11, p01]);
 
                 const z = sum([z00, z01, z10, z11]) / 4;
                 const n = (z - min) / (max - min);
