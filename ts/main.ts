@@ -78,7 +78,7 @@ export class View {
         // 視点の上向き
         const up = new Vec3(0, 1, 0);
 
-        const ez = this.target.sub(this.eye).unit();
+        const ez = this.eye.sub(this.target).unit();
         const ex = up.cross(ez).unit();
         const ey = ez.cross(ex);
 
@@ -131,7 +131,7 @@ export class View {
     }
 
     project(pos : Vec3) : Vec3 {
-        const pos2 = this.eyeR.dot(pos.sub(this.eye));
+        const pos2 = this.eyeR.dot(this.eye.sub(pos));
 
         // height = distance * tan(0.5 * FoV) 
         const h1 = Math.abs(pos2.z) * this.tanHalfFoV;
@@ -266,6 +266,7 @@ export function onChange(){
     case "Axis": makeAxis(); break;
     case "Arrow": makeArrows(); break;
     case "Wave": makeWave(); break;
+    case "Geodesic": makeGeodesicPolyhedron(aView);
     }
 }
 }

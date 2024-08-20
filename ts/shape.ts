@@ -103,6 +103,8 @@ class Array3x3 extends Data {
 
 
 export abstract class Shape {
+    static maxId = 0;
+    id : number;
     view : View;
     centerZ : number = NaN;
 
@@ -110,6 +112,7 @@ export abstract class Shape {
     abstract setProjection() : void;
 
     constructor(view : View){
+        this.id = Shape.maxId++;
         this.view = view;
     }
 }
@@ -258,13 +261,14 @@ export class Circle extends Shape {
 }
 
 class Polygon extends Primitive {
-    points3D : Vec3[] = [];
+    points3D : Vec3[];
     points2D : Vec2[] = [];
     material : [number, number, number] = [0, 0, 0];
     color : string = "black";
 
-    constructor(view : View, color : string = "black"){
+    constructor(view : View, points3d : Vec3[], color : string = "black"){
         super(view);
+        this.points3D = points3d.slice();
         this.color = color;
     }
 
@@ -308,10 +312,24 @@ class Polygon extends Primitive {
 
     setColor(){
         const l = this.norm().dot(this.view.lightDir);
-        const rgb = this.material.map(x => (255 * Math.max(0, Math.min(x * l))).toFixed() );
+        const rgb = this.material.map(x => Math.max(0, Math.min(255, 255 * x * l)).toFixed() );
         this.color = `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]})`;
 
     }
+}
+
+export class Triangle extends Polygon {
+    constructor(view : View, points3d:Vec3[], color : string = "black"){
+        super(view, points3d, color);
+    }
+
+    setColor(){
+        const l = this.norm().dot(this.view.lightDir);
+        const rgb = this.material.map(x => Math.max(0, Math.min(255, 255 * x * l)).toFixed() );
+        this.color = `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]})`;
+
+    }
+
 }
 
 export class Graph extends Shape {
@@ -358,7 +376,7 @@ export class Arrow extends Polygon {
     vec : Vec3 = Vec3.nan();
 
     constructor(view : View, pos : Vec3, vec : Vec3, color : string){
-        super(view, color);
+        super(view, [], color);
         this.pos = pos;
         this.vec = vec;
     }
@@ -454,8 +472,7 @@ export class Surface {
                 const p10 = new Vec3(x10, y10, z10);
                 const p11 = new Vec3(x11, y11, z11);
 
-                const polygon = new Polygon(view);
-                polygon.points3D = [p00, p10, p11, p01];
+                const polygon = new Polygon(view, [p00, p10, p11, p01]);
 
                 const z = sum([z00, z01, z10, z11]) / 4;
                 const n = (z - min) / (max - min);

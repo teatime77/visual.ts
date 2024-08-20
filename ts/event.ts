@@ -3,6 +3,7 @@ namespace visualts {
 export function bodyOnLoad(){
     const canvas = $("canvas") as HTMLCanvasElement;
     aView = new View(canvas);
+    makeGeodesicPolyhedron(aView);
 
     $("view-item").addEventListener("change", onChange)
     msg("hello");

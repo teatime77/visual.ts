@@ -1,11 +1,14 @@
 namespace visualts {
 
 export class Vec2 {
+    static maxId = 0;
+    id : number;
     typeName: string = "Vec2";
     x: number;
     y: number;
 
     constructor(x:number, y: number){
+        this.id = Vec2.maxId++;
         this.x = x;
         this.y = y;
     }
@@ -162,6 +165,10 @@ export class Vec3 extends Vec2 {
         }
 
         return new Vec3(this.x / d, this.y / d, this.z / d);
+    }
+
+    midPoint(pt:Vec3) : Vec3 {
+        return new Vec3((this.x + pt.x) / 2, (this.y + pt.y) / 2, (this.z + pt.z) / 2);
     }
 
     divide(t: number, pt: Vec3) : Vec3 {
