@@ -7,7 +7,7 @@ export class View {
     canvasHalfW : number;
     canvasHalfH : number;
 
-    shapes : Shape[] = [];
+    objs : Obj[] = [];
 
     lightDir = new Vec3(0, 0, 1);
 
@@ -50,10 +50,12 @@ export class View {
     drawShapes(){
         this.clear();
 
-        this.shapes.forEach(c => c.setProjection(this));    
-        this.shapes.sort((a:Shape, b:Shape)=> b.centerZ - a.centerZ);
+        const shapes = this.objs.map(x => x.shapes).flat();
 
-        this.shapes.forEach(c => c.draw(this));    
+        shapes.forEach(c => c.setProjection(this));    
+        shapes.sort((a:Shape, b:Shape)=> b.centerZ - a.centerZ);
+
+        shapes.forEach(c => c.draw(this));    
 
         window.requestAnimationFrame(this.drawShapes.bind(this));
     }
@@ -158,17 +160,18 @@ export class View {
 
     addPoint(x: number, y: number, z:number, color : string = "black"){
         const circle = new Circle(new Vec3(x, y, z), 1, color);
-        this.shapes.push(circle);
+        // this.shapes.push(circle);
     }
 
     onChange(){
         msg(`sel:${$sel("view-item").value}`);
         switch($sel("view-item").value){
-        case "Ball": makeBall(this); break;
-        case "Axis": makeAxis(this); break;
-        case "Arrow": makeArrows(this); break;
-        case "Wave": makeWave(this); break;
-        case "Geodesic": makeGeodesicPolyhedron(this);
+        case "Ball": this.objs = [ new Ball()]; break;
+        case "Axis": this.objs = [ new AxisXYZ() ]; break;
+        case "Arrow": this.objs = [ new Arrows() ]; break;
+        case "Wave": this.objs = [ new Wave(this) ]; break;
+        case "Geodesic": this.objs = [ new AxisXYZ(), new GeodesicPolyhedron(this) ]; break;
+        case "Grid": this.objs = [ new Grid() ]; break;
         }
     }
 }
@@ -183,103 +186,129 @@ export function colorStr(r : number, pos : Vec3){
     return `rgb(${v2[0]} ${v2[1]} ${v2[2]})`
 }
 
-export function makeAxis(view : View){
-    view.shapes = [];
-
-    const axis_len = 5.0;
-    const x_axis = new Arrow(Vec3.zero(), new Vec3(axis_len, 0, 0), "red");
-    const y_axis = new Arrow(Vec3.zero(), new Vec3(0, axis_len, 0), "green");
-    const z_axis = new Arrow(Vec3.zero(), new Vec3(0, 0, axis_len), "blue");
-
-    view.shapes.push(x_axis, y_axis, z_axis);
+export abstract class Obj {
+    shapes : Shape[] = [];
 }
 
-export function makeBall(view : View){
-    view.shapes = [];
-    
-    const r1 = 5;
+class AxisXYZ extends Obj {
+    constructor(){
+        super();
+        this.shapes = [];
 
-    const n1 = 16;
-    const n2 = 32;
+        const axis_len = 5.0;
+        const x_axis = new Arrow(Vec3.zero(), new Vec3(axis_len, 0, 0), "red");
+        const y_axis = new Arrow(Vec3.zero(), new Vec3(0, axis_len, 0), "green");
+        const z_axis = new Arrow(Vec3.zero(), new Vec3(0, 0, axis_len), "blue");
 
-    for(const i of range(n1)){
-        const th = Math.PI * i / n1;
-        const z  = r1 * Math.cos(th);
-        const r2 = r1 * Math.sin(th);
+        this.shapes.push(x_axis, y_axis, z_axis);
+    }
+}
 
-        for(const j  of range(n2)){
-            const ph = 2 * Math.PI * j / n2;
-            const x = r2 * Math.cos(ph);
-            const y = r2 * Math.sin(ph);
+export class Ball extends Obj {
+    constructor(){
+        super();
+        this.shapes = [];
+        
+        const r1 = 5;
 
-            const pos = new Vec3(x, y, z);
-            const color = colorStr(r1, pos);
+        const n1 = 16;
+        const n2 = 32;
 
-            const circle = new Circle(new Vec3(pos.x, pos.y, pos.z), 5, color);
-            view.shapes.push(circle);
+        for(const i of range(n1)){
+            const th = Math.PI * i / n1;
+            const z  = r1 * Math.cos(th);
+            const r2 = r1 * Math.sin(th);
+
+            for(const j  of range(n2)){
+                const ph = 2 * Math.PI * j / n2;
+                const x = r2 * Math.cos(ph);
+                const y = r2 * Math.sin(ph);
+
+                const pos = new Vec3(x, y, z);
+                const color = colorStr(r1, pos);
+
+                const circle = new Circle(new Vec3(pos.x, pos.y, pos.z), 5, color);
+                this.shapes.push(circle);
+            }
         }
     }
 }
 
-function makeArrows(view : View){
-    view.shapes = [];
-    const r1 = 5;
+class Grid extends Obj{
+    constructor(){
+        super();
+        const line1 = new LineSegment(Vec3.zero(), Vec3.ex().mul(5));
+        const line2 = new LineSegment(Vec3.zero(), Vec3.ey().mul(5));
+        const line3 = new LineSegment(Vec3.zero(), Vec3.ez().mul(5));
+        this.shapes = [ line1, line2, line3 ];
+    }
+}
 
-    const n1 = 8;
-    const n2 = 16;
+class Arrows extends Obj {
+    constructor(){
+        super();
+        this.shapes = [];
+        const r1 = 5;
 
-    for(const i of range(n1)){
-        const th = Math.PI * i / n1;
-        const z  = r1 * Math.cos(th);
-        const r2 = r1 * Math.sin(th);
+        const n1 = 8;
+        const n2 = 16;
 
-        for(const j  of range(n2)){
-            const ph = 2 * Math.PI * j / n2;
-            const x = r2 * Math.cos(ph);
-            const y = r2 * Math.sin(ph);
+        for(const i of range(n1)){
+            const th = Math.PI * i / n1;
+            const z  = r1 * Math.cos(th);
+            const r2 = r1 * Math.sin(th);
 
-            const pos = new Vec3(x, y, z);
-            const vec = new Vec3(x, y, z);
-            const color = colorStr(r1, pos);
+            for(const j  of range(n2)){
+                const ph = 2 * Math.PI * j / n2;
+                const x = r2 * Math.cos(ph);
+                const y = r2 * Math.sin(ph);
 
-            const arrow = new Arrow(pos, vec, color);
-            view.shapes.push(arrow);
+                const pos = new Vec3(x, y, z);
+                const vec = new Vec3(x, y, z);
+                const color = colorStr(r1, pos);
+
+                const arrow = new Arrow(pos, vec, color);
+                this.shapes.push(arrow);
+            }
         }
     }
 }
 
-function makeWave(view : View){
-    const r1 = 5;
-    const n = 32;
+class  Wave extends Obj {
+    constructor(view : View){
+        super();
+        const r1 = 5;
+        const n = 32;
 
-    const X = new Array2x2(n, n);
-    const Y = new Array2x1(n, n);
-    for(const i of range(n)){
-        for(const j of range(n)){
-            const th  = 2 * Math.PI * i / n - Math.PI;
-            const phi = 2 * Math.PI * j / n - Math.PI;
-            const x = r1 * th;
-            const y = r1 * phi;
-            const z = r1 * (Math.cos(th) + Math.sin(phi));
+        const X = new Array2x2(n, n);
+        const Y = new Array2x1(n, n);
+        for(const i of range(n)){
+            for(const j of range(n)){
+                const th  = 2 * Math.PI * i / n - Math.PI;
+                const phi = 2 * Math.PI * j / n - Math.PI;
+                const x = r1 * th;
+                const y = r1 * phi;
+                const z = r1 * (Math.cos(th) + Math.sin(phi));
 
-            X.set(i, j, x, y);
+                X.set(i, j, x, y);
 
-            Y.set(i, j, z);
-        }    
+                Y.set(i, j, z);
+            }    
+        }
+
+        const surface = new Surface(X, Y);
+        surface.make(view);
+        this.shapes = surface.polygons;
+
+        // for(const poly of surface.polygons){
+        //     const pos  = poly.points3D[1];
+        //     const norm = poly.norm().mul(1);
+
+        //     const color = colorStr(r1, pos);
+        //     const arrow = new Arrow(view, pos, norm, color);
+        //     view.shapes.push(arrow);
+        // }
     }
-
-    const surface = new Surface(X, Y);
-    surface.make(view);
-    view.shapes = surface.polygons;
-
-    // for(const poly of surface.polygons){
-    //     const pos  = poly.points3D[1];
-    //     const norm = poly.norm().mul(1);
-
-    //     const color = colorStr(r1, pos);
-    //     const arrow = new Arrow(view, pos, norm, color);
-    //     view.shapes.push(arrow);
-    // }
 
 }
 

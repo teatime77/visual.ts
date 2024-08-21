@@ -126,7 +126,6 @@ class Scatter2x0 extends Shape {
     make(view : View, X : Array1x2){
         for(const i of range(X.dims[0])){
             const [x, y] = X.at(i);
-            view.addPoint(x, y, 0);
         }
     }
 
@@ -228,21 +227,33 @@ class Mesh2x2 extends Shape {
 }
 
 export class LineSegment extends Shape {    
-    p1: Vec2 = new Vec2(0,0);
-    p2: Vec2 = new Vec2(0,0);
-    p12: Vec2 = new Vec2(0,0);
-    e: Vec2 = new Vec2(0,0);
+    p1: Vec3;
+    p2: Vec3;
+    p1p!: Vec3;
+    p2p!: Vec3;
+    // p12: Vec3;
+    // e: Vec3;
 
-    constructor(){
+    constructor(p1: Vec3, p2: Vec3){
         super();
+        this.p1 = p1;
+        this.p2 = p2;
     }
 
     draw(view : View) : void {
+        const ctx = view.ctx;
 
+        ctx.beginPath();
+        ctx.moveTo(this.p1p.x, this.p1p.y);
+        ctx.lineTo(this.p2p.x, this.p2p.y);
+        ctx.lineWidth = 15;
+        ctx.stroke();        
     }
 
     setProjection(view : View) : void {
-        
+        this.p1p = view.project(this.p1);
+        this.p2p = view.project(this.p2);
+        this.centerZ = (this.p1.z + this.p2.z) / 2;        
     }
 
 

@@ -3,12 +3,11 @@ namespace visualts {
 export function bodyOnLoad(){
     const canvas = $("canvas") as HTMLCanvasElement;
     const view = new View(canvas);
-    makeGeodesicPolyhedron(view);
 
     $("view-item").addEventListener("change", view.onChange.bind(view))
     msg("hello");
 
-    makeBall(view);
+    view.objs = [ new Ball() ];
     window.requestAnimationFrame(view.drawShapes.bind(view));
 }
 

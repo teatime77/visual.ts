@@ -156,19 +156,21 @@ function divideTriangle(view : View, triangles : Triangle[], sphere_r : number) 
     return new_triangles;
 }
 
-export function makeGeodesicPolyhedron(view : View){
-    makeAxis(view);
+export class GeodesicPolyhedron extends Obj {
+    constructor(view : View){
+        super();
 
-    let [triangles, sphere_r] = makeRegularIcosahedron(view);
+        let [triangles, sphere_r] = makeRegularIcosahedron(view);
 
-    for(const i of range(2)){
-        triangles = divideTriangle(view, triangles, sphere_r);
+        for(const i of range(2)){
+            triangles = divideTriangle(view, triangles, sphere_r);
+        }
+
+        const scale = 5;
+        triangles.forEach(tri => tri.points3D.forEach(p => p.mul(scale)));
+
+        this.shapes.push(...triangles);
     }
-
-    const scale = 5;
-    triangles.forEach(tri => tri.points3D.forEach(p => p.mul(scale)));
-
-    view.shapes.push(...triangles);
 
 }
 
