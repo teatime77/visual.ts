@@ -16,13 +16,13 @@ export class View {
     tanHalfX : number;
     aspectRatio : number;
 
-    eye    : Vec3;
+    eye    = Vec3.zero();
     eyeR!  : Mat3;
     target : Vec3 = new Vec3(0, 0, 0);
 
     camDistance : number = 30;
-    camTheta : number = 0;
-    camPhi   : number = 0;
+    camTheta : number = Math.PI / 4;
+    camPhi   : number = Math.PI / 4;
 
     camThetaSave : number = 0;
     camPhiSave   : number = 0;
@@ -32,7 +32,6 @@ export class View {
 
     constructor(canvas : HTMLCanvasElement){
         this.canvas = canvas;
-        this.eye    = new Vec3(0, 0, - this.camDistance)
         this.ctx = canvas.getContext("2d")!;
         assert(this.ctx != null);
 
@@ -65,7 +64,11 @@ export class View {
     }
 
     updateEye(){
-        this.eye = new Vec3(0, 0, - this.camDistance).rotY(this.camPhi).rotX(this.camTheta);
+        this.eye.y = this.camDistance * Math.cos(this.camTheta);
+        const r = this.camDistance * Math.sin(this.camTheta);
+
+        this.eye.z = r * Math.cos(this.camPhi);
+        this.eye.x = r * Math.sin(this.camPhi);
 
         $inp("eye-x").value = this.eye.x.toFixed();
         $inp("eye-y").value = this.eye.y.toFixed();
@@ -87,6 +90,16 @@ export class View {
             [ ey.x, ey.y, ey.z ],
             [ ez.x, ez.y, ez.z ],
         ]);
+
+/*
+        for(const row of this.eyeR.dt){
+            msg(`eye R : ${row.map(x => x.toFixed(1)).join(", ")}`);
+        }
+        for(const e of [Vec3.zero(), Vec3.ex(), Vec3.ey(), Vec3.ez()]){
+            const v = this.eyeR.dot(e.sub(this.eye));
+            msg(`e : ${v.x.toFixed(1)} ${v.y.toFixed(1)} ${v.z.toFixed(1)}`);
+        }
+*/
     }
 
     pointerdown(ev : PointerEvent){
@@ -109,8 +122,8 @@ export class View {
         var newX = ev.clientX;
         var newY = ev.clientY;
 
-        this.camTheta = this.camThetaSave + (newY - this.lastMouseY) / 300;
-        this.camPhi   = this.camPhiSave + (newX - this.lastMouseX) / 300;
+        this.camTheta = this.camThetaSave - (newY - this.lastMouseY) / 300;
+        this.camPhi   = this.camPhiSave   - (newX - this.lastMouseX) / 300;
 
         $inp("theta").value = Math.round(toDegree(this.camTheta)).toFixed();
         $inp("phi").value = Math.round(toDegree(this.camPhi)).toFixed();
@@ -131,7 +144,7 @@ export class View {
     }
 
     project(pos : Vec3) : Vec3 {
-        const pos2 = this.eyeR.dot(this.eye.sub(pos));
+        const pos2 = this.eyeR.dot(pos.sub(this.eye));
 
         // height = distance * tan(0.5 * FoV) 
         const h1 = Math.abs(pos2.z) * this.tanHalfY;

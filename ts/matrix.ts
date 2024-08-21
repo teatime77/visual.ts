@@ -107,6 +107,18 @@ export class Vec3 extends Vec2 {
         return new Vec3(0, 0, 0);
     }
 
+    static ex() : Vec3 {
+        return new Vec3(1, 0, 0);
+    }
+
+    static ey() : Vec3 {
+        return new Vec3(0, 1, 0);
+    }
+
+    static ez() : Vec3 {
+        return new Vec3(0, 0, 1);
+    }
+
     constructor(x:number, y: number, z: number){
         super(x, y);
         this.z = z;
