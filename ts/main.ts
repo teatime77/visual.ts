@@ -50,6 +50,7 @@ export class View {
     drawShapes(){
         this.clear();
 
+        this.objs.forEach(x => x.updateObj(this));
         const shapes = this.objs.map(x => x.shapes).flat();
 
         shapes.forEach(c => c.setProjection(this));    
@@ -171,7 +172,7 @@ export class View {
         case "Arrow": this.objs = [ new Arrows() ]; break;
         case "Wave": this.objs = [ new Wave(this) ]; break;
         case "Geodesic": this.objs = [ new AxisXYZ(), new GeodesicPolyhedron(this) ]; break;
-        case "Grid": this.objs = [ new Grid() ]; break;
+        case "Grid": this.objs = [ new AxisXYZ(), new Grid() ]; break;
         }
     }
 }
@@ -188,6 +189,9 @@ export function colorStr(r : number, pos : Vec3){
 
 export abstract class Obj {
     shapes : Shape[] = [];
+
+    updateObj(view : View){        
+    }
 }
 
 class AxisXYZ extends Obj {
@@ -235,12 +239,67 @@ export class Ball extends Obj {
 }
 
 class Grid extends Obj{
+    visited = false;
     constructor(){
         super();
-        const line1 = new LineSegment(Vec3.zero(), Vec3.ex().mul(5));
-        const line2 = new LineSegment(Vec3.zero(), Vec3.ey().mul(5));
-        const line3 = new LineSegment(Vec3.zero(), Vec3.ez().mul(5));
-        this.shapes = [ line1, line2, line3 ];
+    }
+
+    updateObj(view : View){   
+        this.shapes = [];
+
+        const near = 30;
+        const far  = 40;
+        const ratio = 0.5;
+
+        
+        const [ex, ey, ez] = view.eyeR.dt.map(v => Vec3.fromArray(v));
+
+        {
+            if(!this.visited){
+                msg(`eye   :${view.eye.str()}`);
+                msg(`ex    :${ex.str()}`);
+                msg(`ey    :${ey.str()}`);
+                msg(`ez    :${ez.str()}`);
+            }
+            for(const [i1, nf] of [near, far].entries()){
+                const nf_str = (i1 == 0 ? "near" : "far");
+                const color  = (nf == near ? "red" : "blue");
+                if(!this.visited){
+                    msg(`${nf_str}`);
+                }
+                for(const [ix, sx] of [-1, 1].entries()){
+                    for(const [iy, sy] of [-1, 1].entries()){
+                        const p = view.eye.add(ez.mul( -nf * ratio)).add( ex.mul(sx * nf * ratio) ).add( ey.mul(sy * nf * ratio) );
+                        const pp = view.project(p);
+                        if(!this.visited){
+                            msg(`circle:${p.str()} ${pp.str()} ${nf_str} ${color}`);
+                        }
+                        this.shapes.push(new Circle(p, 5, color));
+                        this.shapes.push( new LineSegment(view.eye, p, "orange") );
+                    }
+                }
+            }
+            this.visited = true;
+        }
+        
+        for(const [sx, sy] of [[1,1], [-1,1], [1,-1], [-1,-1]]){
+            const p1 = ex.mul(sx * near * ratio).add( ey.mul(sy * near * ratio) ).add( ez.mul( -near * ratio) );
+            const p2 = ex.mul(sx * far  * ratio).add( ey.mul(sy * far  * ratio) ).add( ez.mul( -far  * ratio) );
+            this.shapes.push( new LineSegment(p1, p2, "orange") );
+        }
+
+        for(const x of range(5)){
+            this.shapes.push( new LineSegment(new Vec3(x, 0, 0), new Vec3(x, 5, 0), "green") );
+            this.shapes.push( new LineSegment(new Vec3(x, 0, 0), new Vec3(x, 0, 5), "blue") );
+        }
+        for(const y of range(5)){
+            this.shapes.push( new LineSegment(new Vec3(0, y, 0), new Vec3(5, y, 0), "red") );
+            this.shapes.push( new LineSegment(new Vec3(0, y, 0), new Vec3(0, y, 5), "blue") );
+        }
+        for(const z of range(5)){
+            this.shapes.push( new LineSegment(new Vec3(0, 0, z), new Vec3(5, 0, z), "red") );
+            this.shapes.push( new LineSegment(new Vec3(0, 0, z), new Vec3(0, 5, z), "green") );
+        }
     }
 }
 

@@ -119,6 +119,10 @@ export class Vec3 extends Vec2 {
         return new Vec3(0, 0, 1);
     }
 
+    static fromArray(v:number[]) : Vec3 {
+        return new Vec3(v[0], v[1], v[2]);
+    }
+
     constructor(x:number, y: number, z: number){
         super(x, y);
         this.z = z;

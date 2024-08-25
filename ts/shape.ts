@@ -106,12 +106,14 @@ export abstract class Shape {
     static maxId = 0;
     id : number;
     centerZ : number = NaN;
+    color : string = "black";
 
     abstract draw(view : View) : void;
     abstract setProjection(view : View) : void;
 
-    constructor(){
+    constructor(color : string = "black"){
         this.id = Shape.maxId++;
+        this.color = color;
     }
 }
 
@@ -234,8 +236,8 @@ export class LineSegment extends Shape {
     // p12: Vec3;
     // e: Vec3;
 
-    constructor(p1: Vec3, p2: Vec3){
-        super();
+    constructor(p1: Vec3, p2: Vec3, color : string = "black"){
+        super(color);
         this.p1 = p1;
         this.p2 = p2;
     }
@@ -246,7 +248,8 @@ export class LineSegment extends Shape {
         ctx.beginPath();
         ctx.moveTo(this.p1p.x, this.p1p.y);
         ctx.lineTo(this.p2p.x, this.p2p.y);
-        ctx.lineWidth = 15;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 1;
         ctx.stroke();        
     }
 
